@@ -1,0 +1,6 @@
+[submodule "bcoin"]
+	path = bcoin
+	url = https://github.com/bcoin-org/bcoin
+[submodule "weselowski-vdf-native.js"]
+	path = weselowski-vdf-native.js
+	url = https://github.com/pentachoron-research/weselowski-vdf-native.js
