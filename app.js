@@ -3,6 +3,10 @@ const server = require('fastify')({
 })
 const path = require('path')
 const AutoLoad = require('@fastify/autoload')
+const {
+  BroadcastChannel,
+  Worker,
+} = require('node:worker_threads');
 const vdf=require("./weselowski-vdf-native.js/lib/index.js")
 const start = async function (server, opts) {
   // Place here your custom code!
@@ -24,7 +28,8 @@ const start = async function (server, opts) {
     options: Object.assign({}, opts)
   })
 
-  console.log(await vdf.generateVDF("test",1000,2048))
+  new Worker(path.join(__dirname,"daemons", "sequencer-tx-fetcher.js"));
+
 }
 start(server,{})
 
