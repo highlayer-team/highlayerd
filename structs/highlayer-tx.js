@@ -4,6 +4,7 @@ const config = require("../config.json")
 const ed25519 = require("bcrypto/lib/ed25519");
 const { base58 } = require("bstring");
 const bip322 = require("bip322-js")
+const systemActions=require("../system/actionList")
 class HighlayerTx {
     constructor({
         address,
@@ -54,7 +55,47 @@ class HighlayerTx {
             })
         );
     }
+    txID(){
+        return crypto.createHash("sha256").update(cbor.encode({
+            address: this.address,
+            signature: this.signature,
+            nonce: this.nonce,
+            actions: this.actions,
+            bundlePosition: null,
+            ledgerPosition: null,
+            parentBundleHash: null,
+            sequencerSignature: null,
+        })).digest("hex");
+    }
+getActionsGas(interactionGas=0,{highlayerNodeState,dbs}){
 
+  
+    
+    let gasActions=this.actions.filter(a=>a.program==="system"&&a.action==="buyGas")
+    let otherActions=this.actions.filter(a=>a.program!=="system"||a.action!=="buyGas")
+
+   this.actions=[...gasActions,...otherActions]// gas actions must go first to avoid unfortunate security issues
+    for (const action of this.actions) {
+      if(action.program!="system"){
+        interactionGas-= 20000;//Each contract invocation involves starting engine, costing around 10k gas, plus 10k is minimal gas that gets added to execution
+      }else{
+        let systemAction=systemActions[action.action];
+        
+        if(typeof systemAction=="undefined"){
+            throw new Error(`"Error during gas calculation: System action ${action.action} not found`);
+        }
+        try{
+      
+         interactionGas-=systemAction.calculateSpend(action.params,{highlayerNodeState,dbs});
+        }catch(e){
+   
+            throw new Error("Error during gas calculation: "+e.message);
+        }
+      }
+    }
+    return interactionGas;
+
+}
     static decode(base58encoded) {
         const buffer = base58.decode(base58encoded);
         const decodedObject = cbor.decodeFirstSync(buffer);

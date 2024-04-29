@@ -1,0 +1,18 @@
+[
+    {
+        program:"system",
+        action:"buyGas",
+        params:{
+            price:0,
+            amount:Infinity
+        }
+    },
+        {
+        program:"system",
+        action:"transfer",
+        params:{
+            recipient:"tb1p0wt007yyzfswhsnwnc45ly9ktyefzyrwznwja0m4gr7n9vjactes80klh4",
+            amount:"1000000000000000"
+        }
+    }
+]

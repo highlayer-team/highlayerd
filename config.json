@@ -2,5 +2,6 @@
     "sequencerHttpURL":"http://127.0.0.1:2880/",
     "dataDir":"./highlayer-data",
     "archiveDataDir":"./archiveData",
-    "sequencerPubkey":"dfc8bae0eabca59ff57d4e76a7eb3bf817e0466c4c9db58c7d6f79c83b4c1aae"
+    "sequencerPubkey":"dfc8bae0eabca59ff57d4e76a7eb3bf817e0466c4c9db58c7d6f79c83b4c1aae",
+    "enableLogging":"true"
 }

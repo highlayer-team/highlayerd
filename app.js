@@ -3,11 +3,12 @@ const server = require('fastify')({
 })
 const path = require('path')
 const AutoLoad = require('@fastify/autoload')
+const config = require("./config.json");
 const {
   BroadcastChannel,
   Worker,
 } = require('node:worker_threads');
-const vdf=require("./weselowski-vdf-native.js/lib/index.js")
+const vdf = require("./weselowski-vdf-native.js/lib/index.js")
 const start = async function (server, opts) {
   // Place here your custom code!
 
@@ -28,16 +29,31 @@ const start = async function (server, opts) {
     options: Object.assign({}, opts)
   })
 
-  new Worker(path.join(__dirname,"daemons", "sequencer-tx-fetcher.js"));
-
+  new Worker(path.join(__dirname, "daemons", "sequencer-tx-fetcher.js"));
+  new Worker(path.join(__dirname, "daemons", "execution-core.js"));
 }
-start(server,{})
+start(server, {
+dbPath: path.join(config.dataDir, "node-state"),
+  databases: [{
+    name: "balances",
+    dbName: "balances"
+  }, {
+    name: "dataBlobs",
+    dbName: "data-blobs"
+  },
+  {
+    name: "sequencerSigToNumber",
+    dbName: "sequencer-sig-to-number"
+  },
+{name:"contracts",dbName:"contracts"}]
+
+})
 
 server.listen({ port: 3000 }, function (err, address) {
   if (err) {
-    fastify.log.error(err)
+    server.log.error(err)
     process.exit(1)
   }
-  console.log("Highlayerd node listening on "+address)
+  console.log("Highlayerd node listening on " + address)
   // Server is now listening on ${address}
 })
