@@ -12,7 +12,6 @@ module.exports={
     },
    async execute(action,{highlayerNodeState,dbs,interaction,actionNumber}){
        let dataId=interaction.hash+numberToHexPaddedEven(actionNumber);
-       console.log(dataId)
        await dbs.dataBlobs.put(dataId,Buffer.from(action.params.data,'base64'))
     }
 }

@@ -27,8 +27,6 @@ module.exports = {
         recipientBalance = recipientBalance.plus(amount);
         await Promise.all([balances.put(interaction.sender, balance.toString()), balances.put(recipient, recipientBalance.toString())])
 
-        const balancesCursor = balances.getRange({ start: 0 });
 
-        console.log(`\n[Balances]\n${[...balancesCursor].map(({ key, value }) => `${key}: ${value}`).join("\n")}\n`)
     }
 }

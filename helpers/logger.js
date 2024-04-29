@@ -13,6 +13,7 @@ module.exports=class HighlayerLogger {
         if(!config.enableLogging){
             return
         }
+   
         fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n--LOG\n"+contents.map(prettyStringify).join('\n---\n')+"\n--LOG")
     }
     error(...contents){

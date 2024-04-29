@@ -44,7 +44,7 @@ const genesisActions = json5.parse(fs.readFileSync(path.join(__dirname, "..", "g
       try {
         if (action.program == "system") {
           if (systemActions[action.action]) {
-            await systemActions[action.action].execute(action, { highlayerNodeState, dbs, interaction: item, actionNumber, macroTasks })
+            await systemActions[action.action].execute(action, { highlayerNodeState, dbs, interaction: item, actionNumber, macroTasks, logger })
             actionNumber++;
           } else {
             throw new Error(`Unknown system action ${action.action}`)
