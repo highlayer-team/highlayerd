@@ -21,7 +21,7 @@ const panicChannel = new BroadcastChannel('panic');
         try {
 
             const resp = await request(config.sequencerHttpURL + "ledger/" + currentTxN).then(r => r.statusCode == 200 ? r.text() : null).catch(e => { ; return null });
-            console.log("Fetched transaction " + currentTxN)
+            // console.log("Fetched transaction " + currentTxN)
             if (!resp) {
                 await wait(1000);
                 continue;
@@ -43,7 +43,7 @@ const panicChannel = new BroadcastChannel('panic');
 async function addToProcessing(tx) {
 
     const decoded = HighlayerTx.decode(tx)
-    console.log("Added transaction " + decoded.ledgerPosition);
+    // console.log("Added transaction " + decoded.ledgerPosition);
     const validSignatures = HighlayerTx.verifySignatures(decoded);
     if (!validSignatures) {
         console.log("Signature check failed")
@@ -65,7 +65,7 @@ async function addToProcessing(tx) {
     try {
         afterActionsGas = decoded.getActionsGas(0, { highlayerNodeState, dbs})
     } catch (e) {
-        console.error("Error during gas calculation: ", e);
+        console.error(`[${currentTxN}] `+"Error during gas calculation: ", e);
         executionCoreChannel.postMessage({ sender: "system", actions: [], gas: 0, id: currentTxN, hash:null});
 
 

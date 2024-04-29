@@ -39,6 +39,7 @@ const genesisActions = json5.parse(fs.readFileSync(path.join(__dirname, "..", "g
     
     while (item.actions.length > 0) {
       const action = item.actions.shift();
+
       const logger=new HighlayerLogger(action.program)
       try {
         if (action.program == "system") {
@@ -62,7 +63,7 @@ const genesisActions = json5.parse(fs.readFileSync(path.join(__dirname, "..", "g
 
           await vm.clear()
           await vm.setGas({ limit: gasLeft + 10000, memoryByteCost: 1, used: 0 });
-          await vm.set("console", { log: logger.log, error:logger.error, warn:logger.error })
+          await vm.set("console", { log: logger.log.bind(logger), error:logger.error.bind(logger), warn:logger.error.bind(logger) })
           await vm.run(contractSource);
           const onTransaction = await vm.get("onTransaction");
 
@@ -91,7 +92,7 @@ const genesisActions = json5.parse(fs.readFileSync(path.join(__dirname, "..", "g
           actionNumber++;
         }
       } catch (e) {
-        logger.error("Transaction: "+interaction.hash, "Sender: "+item.sender, "Error: "+e)
+        logger.error("Transaction: "+item.hash, "Sender: "+item.sender, "Error: "+e)
         return;
       }
     }
