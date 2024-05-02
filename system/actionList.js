@@ -1,5 +1,5 @@
 module.exports={
-    buyGas:require("./actions/buyGas.js"),
+    allocateGas:require("./actions/allocateGas.js"),
     transfer:require("./actions/transfer.js"),
     uploadData:require("./actions/uploadData.js"),
     createContract:require("./actions/createContract.js"),

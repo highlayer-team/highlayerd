@@ -88,6 +88,7 @@ getActionsGas(interactionGas=0,{highlayerNodeState,dbs}){
       
          interactionGas-=systemAction.calculateSpend(action.params,{highlayerNodeState,dbs});
         }catch(e){
+            console.log(action)
    
             throw new Error("Error during gas calculation: "+e.message);
         }

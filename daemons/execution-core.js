@@ -1,117 +1,156 @@
-const request = require("brq")
-const { BroadcastChannel, Worker } = require('node:worker_threads');
+const request = require("brq");
+const { BroadcastChannel, Worker } = require("node:worker_threads");
 const lmdb = require("lmdb");
 const path = require("path");
 const ed25519 = require("bcrypto/lib/ed25519");
-const { HighlayerTx } = require("../structs/highlayer-tx.js")
+const { HighlayerTx } = require("../structs/highlayer-tx.js");
 const config = require("../config.json");
-const GeneratorQueue = require('../helpers/generator-queue.js');
+const GeneratorQueue = require("../helpers/generator-queue.js");
 const systemActions = require("../system/actionList");
-const fs = require("fs")
+const fs = require("fs");
 const json5 = require("json5");
-const crypto=require("crypto")
+const crypto = require("crypto");
 const Glomium = require("glomium");
 const calculateActionsGas = require("../helpers/calculateActionsGas");
 const HighlayerLogger = require("../helpers/logger.js");
 
-
-const genesisActions = json5.parse(fs.readFileSync(path.join(__dirname, "..", "genesis-actions.json5"), "utf-8"));
+const genesisActions = json5.parse(
+	fs.readFileSync(path.join(__dirname, "..", "genesis-actions.json5"), "utf-8")
+);
 
 (async () => {
-  const highlayerNodeState = lmdb.open({ path: path.join(config.dataDir, "node-state"), useVersions: true, sharedStructuresKey: Symbol.for('dataStructures') });
-  const dbs = {
-    balances: highlayerNodeState.openDB("balances"),
-    dataBlobs: highlayerNodeState.openDB("data-blobs"),
-    contracts: highlayerNodeState.openDB("contracts"),
-  }
-  const vm = new Glomium({
-    gas: {
-      limit: 100000,
-      memoryByteCost: 1         // Define the gas cost per byte of memory used
-    }
-  })
+	const highlayerNodeState = lmdb.open({
+		path: path.join(config.dataDir, "node-state"),
+		useVersions: true,
+		sharedStructuresKey: Symbol.for("dataStructures"),
+	});
+	const dbs = {
+		balances: highlayerNodeState.openDB("balances"),
+		dataBlobs: highlayerNodeState.openDB("data-blobs"),
+		contracts: highlayerNodeState.openDB("contracts"),
+	};
+	const vm = new Glomium({
+		gas: {
+			limit: 100000,
+			memoryByteCost: 1, // Define the gas cost per byte of memory used
+		},
+	});
 
-  const executionCoreChannel = new BroadcastChannel('executionCore');
+	const executionCoreChannel = new BroadcastChannel("executionCore");
 
-  let macroTasks = new GeneratorQueue([], 0, [], async function onNextItem(item) {
-    let actionNumber = 0;
-    let gasLeft = item.gas;
-    
-    while (item.actions.length > 0) {
-      const action = item.actions.shift();
+	let macroTasks = new GeneratorQueue([], 0, [], async function onNextItem(
+		item
+	) {
+		let actionNumber = 0;
+		let gasLeft = item.gas;
 
-      const logger=new HighlayerLogger(action.program)
-      try {
-        if (action.program == "system") {
-          if (systemActions[action.action]) {
-            await systemActions[action.action].execute(action, { highlayerNodeState, dbs, interaction: item, actionNumber, macroTasks, logger })
-            actionNumber++;
-          } else {
-            throw new Error(`Unknown system action ${action.action}`)
-          }
-        } else {
-          const contractSourceId = await dbs.contracts.get(action.program);
-          if (!contractSourceId) {
-            throw new Error(`Unknown program ${action.program}`)
-          }
-          let contractSource = await dbs.dataBlobs.get(contractSourceId);
-          if (!contractSource) {
-            throw new Error(`Unknown program source ${contractSourceId}`)
-          }
+		while (item.actions.length > 0) {
+			const action = item.actions.shift();
 
-          contractSource = contractSource.toString("utf-8")
+			const logger = new HighlayerLogger(action.program);
+			try {
+				if (action.program == "system") {
+					if (systemActions[action.action]) {
+						await systemActions[action.action].execute(action, {
+							highlayerNodeState,
+							dbs,
+							interaction: item,
+							actionNumber,
+							macroTasks,
+							logger,
+						});
+						actionNumber++;
+					} else {
+						throw new Error(`Unknown system action ${action.action}`);
+					}
+				} else {
+					const contractSourceId = await dbs.contracts.get(action.program);
+					if (!contractSourceId) {
+						throw new Error(`Unknown program ${action.program}`);
+					}
+					let contractSource = await dbs.dataBlobs.get(contractSourceId);
+					if (!contractSource) {
+						throw new Error(`Unknown program source ${contractSourceId}`);
+					}
 
-          await vm.clear()
-          await vm.setGas({ limit: gasLeft + 10000, memoryByteCost: 1, used: 0 });
-          await vm.set("console", { log: logger.log.bind(logger), error:logger.error.bind(logger), warn:logger.error.bind(logger) })
-          await vm.run(contractSource);
-          const onTransaction = await vm.get("onTransaction");
+					contractSource = contractSource.toString("utf-8");
 
-          const outcome = await onTransaction({ hash: item.hash, sender: item.sender, actionPosition: actionNumber, params: action.params })
-          
-          
-          item.gas-=((await vm.getGas()).gasUsed-10000)
-         if(outcome&&outcome.length>0){
-          
-          try{
-          item.gas=calculateActionsGas(item.gas, outcome, { highlayerNodeState, dbs })
-          }catch(e){
-            logger.error("Transaction: "+interaction.hash, "Sender: "+item.sender, "Error: "+e)
-            return
-          }
-          if(item.gas<1){
-            logger.error("Transaction: "+interaction.hash, "Sender: "+item.sender, "Error: Out of gas")
-            return
-          }
-          macroTasks.addToPriority({
-            sender: action.program, actions: outcome, gas: item.gas ,hash: crypto.createHash("sha256").update(action.program+item.hash+actionNumber.toString(16)).digest("hex")
-        })
-         }
-         
+					await vm.clear();
+					await vm.setGas({
+						limit: gasLeft + 10000,
+						memoryByteCost: 1,
+						used: 0,
+					});
+					await vm.set("console", {
+						log: logger.log.bind(logger),
+						error: logger.error.bind(logger),
+						warn: logger.error.bind(logger),
+					});
+					await vm.run(contractSource);
+					const onTransaction = await vm.get("onTransaction");
 
-          actionNumber++;
-        }
-      } catch (e) {
-        logger.error("Transaction: "+item.hash, "Sender: "+item.sender, "Error: "+e)
-        return;
-      }
-    }
-    return true;
-    // console.log(`Processed transaction ${item.id} by ${item.sender}`)
-  })
-  //     setInterval(()=>{
-  // console.log(macroTasks.nextId, macroTasks)
-  //     },1000)
-  executionCoreChannel.onmessage = async (interaction) => {
-    macroTasks.addItem(interaction.data)
+					const outcome = await onTransaction({
+						hash: item.hash,
+						sender: item.sender,
+						actionPosition: actionNumber,
+						params: action.params,
+					});
 
-  }
-  macroTasks.addItem({
-    id: 0,
-    sender: "system",
-    actions: genesisActions
-  })
+					item.gas -= (await vm.getGas()).gasUsed - 10000;
+					if (outcome && outcome.length > 0) {
+						try {
+							item.gas = calculateActionsGas(item.gas, outcome, {
+								highlayerNodeState,
+								dbs,
+							});
+						} catch (e) {
+							logger.error(
+								"Transaction: " + interaction.hash,
+								"Sender: " + item.sender,
+								"Error: " + e
+							);
+							return;
+						}
+						if (item.gas < 1) {
+							logger.error(
+								"Transaction: " + interaction.hash,
+								"Sender: " + item.sender,
+								"Error: Out of gas"
+							);
+							return;
+						}
+						macroTasks.addToPriority({
+							sender: action.program,
+							actions: outcome,
+							gas: item.gas,
+							hash: crypto
+								.createHash("sha256")
+								.update(action.program + item.hash + actionNumber.toString(16))
+								.digest("hex"),
+						});
+					}
 
+					actionNumber++;
+				}
+			} catch (e) {
+				logger.error(
+					"Transaction: " + item.hash,
+					"Sender: " + item.sender,
+					"Error: " + e
+				);
+				return;
+			}
+		}
+		return true;
 
+	});
 
-})()
+	executionCoreChannel.onmessage = async (interaction) => {
+		macroTasks.addItem(interaction.data);
+	};
+	macroTasks.addItem({
+		id: 0,
+		sender: "system",
+		actions: genesisActions,
+	});
+})();

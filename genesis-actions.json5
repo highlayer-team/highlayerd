@@ -1,7 +1,7 @@
 [
     {
         program:"system",
-        action:"buyGas",
+        action:"allocateGas",
         params:{
             price:0,
             amount:Infinity
