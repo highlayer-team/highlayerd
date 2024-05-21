@@ -1,6 +1,8 @@
-module.exports = async function (fastify, opts) {
-    fastify.get('/data/:id', async function (request, reply) {
-      return fastify.dbs.dataBlobs.get(request.params.id)
+module.exports = async function (app, carrier) {
+    app.get('/data/:id', async function (reply, request) {
+      reply.writeStatus("200 OK");
+      reply.writeHeader("Content-Type", "application/octet-stream")
+      reply.tryEnd(carrier.dbs.dataBlobs.get(request.getParameter(0)))
     })
   }
   

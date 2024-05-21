@@ -8,6 +8,7 @@ module.exports=class GeneratorQueue {
         this.processingLock=Lock.create()
     }
     addItem(item){
+        console.log(item.id)
         if(item.id>=this.nextId){
             this.items.set(item.id, item);
         }

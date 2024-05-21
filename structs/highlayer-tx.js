@@ -1,4 +1,4 @@
-const cbor = require("cbor");
+const msgpackr = require("msgpackr");
 const crypto = require("crypto");
 const config = require("../config.json")
 const ed25519 = require("bcrypto/lib/ed25519");
@@ -28,7 +28,7 @@ class HighlayerTx {
 
     encode() {
         return base58.encode(
-            cbor.encode({
+            msgpackr.encode({
                 address: this.address,
                 signature: this.signature,
                 nonce: this.nonce,
@@ -43,7 +43,7 @@ class HighlayerTx {
 
     extractPrototype() {
         return base58.encode(
-            cbor.encode({
+            msgpackr.encode({
                 address: this.address,
                 signature: null,
                 nonce: this.nonce,
@@ -56,7 +56,7 @@ class HighlayerTx {
         );
     }
     txID(){
-        return crypto.createHash("sha256").update(cbor.encode({
+        return crypto.createHash("sha256").update(msgpackr.encode({
             address: this.address,
             signature: this.signature,
             nonce: this.nonce,
@@ -88,7 +88,7 @@ getActionsGas(interactionGas=0,{highlayerNodeState,dbs}){
       
          interactionGas-=systemAction.calculateSpend(action.params,{highlayerNodeState,dbs});
         }catch(e){
-            console.log(action)
+            console.log(action,e)
    
             throw new Error("Error during gas calculation: "+e.message);
         }
@@ -98,8 +98,9 @@ getActionsGas(interactionGas=0,{highlayerNodeState,dbs}){
 
 }
     static decode(base58encoded) {
+        try{
         const buffer = base58.decode(base58encoded);
-        const decodedObject = cbor.decodeFirstSync(buffer);
+        const decodedObject = msgpackr.decode(buffer);
         return new HighlayerTx({
             address: decodedObject.address,
             signature: decodedObject.signature,
@@ -110,6 +111,9 @@ getActionsGas(interactionGas=0,{highlayerNodeState,dbs}){
             parentBundleHash: decodedObject.parentBundleHash,
             sequencerSignature: decodedObject.sequencerSignature,
         });
+    }catch(e){
+        return null
+    }
     }
     static verifySignatures(encodedHighlayerTx) {
         const sequencerUnsigned = Buffer.from(new HighlayerTx({ ...encodedHighlayerTx, sequencerSignature: null }).encode())

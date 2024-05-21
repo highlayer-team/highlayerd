@@ -1,39 +1,49 @@
-const server = require('fastify')({
-  logger: true
-})
+const uWS = require('uWebSockets.js')
+const server = uWS.App()
 const path = require('path')
+const fs = require('fs');
 const AutoLoad = require('@fastify/autoload')
 const config = require("./config.json");
 const {
   BroadcastChannel,
   Worker,
 } = require('node:worker_threads');
+const centralChannel = new BroadcastChannel("centralChannel");
 const vdf = require("./weselowski-vdf-native.js/lib/index.js")
 const start = async function (server, opts) {
-  // Place here your custom code!
-
-  // Do not touch the following lines
-
-  // This loads all plugins defined in plugins
-  // those should be support plugins that are reused
-  // through your application
-  server.register(AutoLoad, {
-    dir: path.join(__dirname, 'plugins'),
-    options: Object.assign({}, opts)
-  })
-
-  // This loads all plugins defined in routes
-  // define your routes in one of these
-  server.register(AutoLoad, {
-    dir: path.join(__dirname, 'routes'),
-    options: Object.assign({}, opts)
-  })
+  let carrier={options:opts, config}
+  const loadRoutes = (app, dirPath, carrier) => {
+    const files = fs.readdirSync(dirPath);
+    files.forEach(file => {
+      const fullPath = path.join(dirPath, file);
+      if (fs.statSync(fullPath).isDirectory()) {
+        loadRoutes(app, fullPath, carrier); 
+      } else if (path.extname(file) === '.js') {
+        const route = require(fullPath);
+        route(app, carrier); 
+      }
+    });
+  };
+  loadRoutes(server, path.join(__dirname, 'plugins'),carrier);
+  loadRoutes(server, path.join(__dirname, 'routes'),carrier);
 
   new Worker(path.join(__dirname, "daemons", "sequencer-tx-fetcher.js"));
   new Worker(path.join(__dirname, "daemons", "execution-core.js"));
+  centralChannel.onmessage = async (interaction) => {
+
+		if(interaction.data.type=="publish"){
+      server.publish(interaction.data.topic, Buffer.from(interaction.data.data), true);
+    }
+	};
+  server.listen(config.port, function (listenSocket) {
+    if (listenSocket) {
+      console.log("Highlayerd node listening on port " + config.port)
+    }
+
+  })
 }
 start(server, {
-dbPath: path.join(config.dataDir, "node-state"),
+  dbPath: path.join(config.dataDir, "node-state"),
   databases: [{
     name: "balances",
     dbName: "balances"
@@ -45,15 +55,7 @@ dbPath: path.join(config.dataDir, "node-state"),
     name: "sequencerSigToNumber",
     dbName: "sequencer-sig-to-number"
   },
-{name:"contracts",dbName:"contracts"}]
+  { name: "contracts", dbName: "contracts" }]
 
 })
 
-server.listen({ port: 3000 }, function (err, address) {
-  if (err) {
-    server.log.error(err)
-    process.exit(1)
-  }
-  console.log("Highlayerd node listening on " + address)
-  // Server is now listening on ${address}
-})

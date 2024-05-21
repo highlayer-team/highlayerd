@@ -37,6 +37,7 @@ const genesisActions = json5.parse(
 	});
 
 	const executionCoreChannel = new BroadcastChannel("executionCore");
+	const centralChannel = new BroadcastChannel("centralChannel");
 
 	let macroTasks = new GeneratorQueue([], 0, [], async function onNextItem(
 		item
@@ -58,6 +59,7 @@ const genesisActions = json5.parse(
 							actionNumber,
 							macroTasks,
 							logger,
+							centralChannel
 						});
 						actionNumber++;
 					} else {

@@ -1,39 +1,37 @@
-const fp = require('fastify-plugin');
 const { open } = require('lmdb');
 
 
-function fastifyLMDBStore(fastify, opts, done) {
+function LMDBStoreModule(_app, carrier) {
     try {
         const store = open({
-            path: opts.dbPath,
-            useVersions: true, sharedStructuresKey: Symbol.for('dataStructures') 
+            path: carrier.options.dbPath,
+            useVersions: true, sharedStructuresKey: Symbol.for('dataStructures')
         });
 
         const dbs = {};
-        if (opts.databases && Array.isArray(opts.databases)) {
-            for (const dbReq of opts.databases) {
+        if (carrier.options.databases && Array.isArray(carrier.options.databases)) {
+            for (const dbReq of carrier.options.databases) {
                 dbs[dbReq.name] = store.openDB(dbReq.dbName);
             }
         }
 
-     
-        fastify.decorate('highlayerNodeState', store);
-        fastify.decorate('dbs', dbs);
 
-        fastify.addHook('onClose', async (instance, done) => {
+        carrier.highlayerNodeState = store
+        carrier.dbs = dbs
+
+        process.on("exit", async () => {
             for (const db of Object.values(dbs)) {
                 await db.close();
             }
             await store.close();
-            done();
-        });
+        })
 
-        done();
+
+
+
     } catch (err) {
-        done(err);
+        console.error(err)
     }
 }
 
-module.exports = fp(fastifyLMDBStore, {
-    name: 'fastify-lmdb-store'
-});
+module.exports = LMDBStoreModule

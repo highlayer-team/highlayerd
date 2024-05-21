@@ -6,4 +6,4 @@ go build -o ../include/libvdf.so -buildmode=c-shared lib.go
 echo "Built libvdf.so"
 cd ..
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/include
-node-gyp configure && node-gyp rebuild
+npm run build-binding
