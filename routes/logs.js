@@ -5,7 +5,7 @@ module.exports = async function (app) {
     let logger = new HighlayerLogger(request.getParameter(0))
     reply.writeStatus("200 OK");
     reply.writeHeader("Content-Type", "text/plain; charset=utf-8")
-    reply.tryEnd(logger.dump())
+    reply.tryEnd(Buffer.from(await logger.dump()))
 
   })
 }

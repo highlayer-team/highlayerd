@@ -49,17 +49,7 @@ let sendTx = async () => {
 	}
 };
 
-let getContent = async () => {
-	const { statusCode, body } = await undici.request(
-		"http://127.0.0.1:2881/content/G7VYgxnATSsJ2UAhxxENFu6DSy4WV9YtpsbQf3mnyNPB"
-	);
 
-	const data = await body.text();
-
-	console.log(data);
-
-	console.log(BconTx.decode(data));
-};
 
 (async () => {
 	await sendTx();

@@ -18,7 +18,7 @@ module.exports = {
     async execute(action, { highlayerNodeState, dbs, interaction, actionNumber, macroTasks }) {
         const { sourceId, initActions, gasForInitActions } = action.params;
         const contractId = bech32.encode("hlcontract", 0, crypto.createHash("sha256").update(Buffer.concat([Buffer.from(interaction.hash, "hex"), Buffer.from(numberToPaddedHex(actionNumber), "hex"), Buffer.from(sourceId, "hex")])).digest())
-        dbs.contracts.put(contractId, sourceId)
+        await dbs.contracts.put(contractId, sourceId)
         macroTasks.addToPriority({
             sender: contractId, actions: initActions, gas: gasForInitActions, hash: crypto.createHash("sha256").update(contractId + interaction.hash + numberToPaddedHex(actionNumber)).digest("hex")
         })
