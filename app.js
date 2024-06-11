@@ -44,7 +44,14 @@ const start = async function (server, opts) {
 }
 start(server, {
   dbPath: path.join(config.dataDir, "node-state"),
-  databases: [{
+  archiveDBPath: path.join(config.archiveDataDir, "slow-node-state"),
+  databases: [
+    {
+      name:"transactions",
+      dbName: "transactions",
+      archive:true
+    },
+  {
     name: "balances",
     dbName: "balances"
   }, {

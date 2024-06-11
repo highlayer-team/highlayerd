@@ -24,10 +24,16 @@ const genesisActions = json5.parse(
 		useVersions: true,
 		sharedStructuresKey: Symbol.for("dataStructures"),
 	});
+	const highlayerNodeArchive = lmdb.open({
+		path: path.join(config.archiveDataDir, "slow-node-state"),
+		useVersions: true,
+		sharedStructuresKey: Symbol.for("dataStructures"),
+	});
 	const dbs = {
 		balances: highlayerNodeState.openDB("balances"),
 		dataBlobs: highlayerNodeState.openDB("data-blobs"),
 		contracts: highlayerNodeState.openDB("contracts"),
+		transactions:highlayerNodeArchive.openDB("transactions")
 	};
 	const vm = new Glomium({
 		gas: {
@@ -42,6 +48,7 @@ const genesisActions = json5.parse(
 	let macroTasks = new GeneratorQueue([], 0, [], async function onNextItem(
 		item
 	) {
+
 		let actionNumber = 0;
 		let gasLeft = item.gas;
 

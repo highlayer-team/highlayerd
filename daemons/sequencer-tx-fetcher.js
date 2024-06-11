@@ -12,11 +12,18 @@ const highlayerNodeState = lmdb.open({
 	useVersions: true,
 	sharedStructuresKey: Symbol.for('dataStructures'),
 });
+const highlayerNodeArchive = lmdb.open({
+	path: path.join(config.archiveDataDir, "slow-node-state"),
+	useVersions: true,
+	sharedStructuresKey: Symbol.for("dataStructures"),
+});
 
 const dbs = {
 	balances: highlayerNodeState.openDB('balances'),
 	sequencerSigToNumber: highlayerNodeState.openDB('sequencer-sig-to-number'),
+	transactions:highlayerNodeArchive.openDB("transactions")
 };
+
 
 let currentTxN = highlayerNodeState.get('current-fetched-tx') || 1;
 const executionCoreChannel = new BroadcastChannel('executionCore');
@@ -94,12 +101,19 @@ async function addToProcessing(tx) {
 		});
 		return;
 	}
+	let hash=decoded.txID()
+	if(hash){
+		console.log(hash,"added to processing")
+		dbs.transactions.ifNoExists(hash, () => {
+			dbs.transactions.put(hash, tx);
+		});
 
+	}
 	executionCoreChannel.postMessage({
 		sender: decoded.address,
 		actions: decoded.actions,
 		gas: afterActionsGas,
 		id: decoded.sequencerTxIndex,
-		hash: decoded.txID(),
+		hash,
 	});
 }

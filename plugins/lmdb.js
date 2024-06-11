@@ -7,11 +7,20 @@ function LMDBStoreModule(_app, carrier) {
             path: carrier.options.dbPath,
             useVersions: true, sharedStructuresKey: Symbol.for('dataStructures')
         });
+        const archiveStore = open({
+            path: carrier.options.archiveDBPath,
+            useVersions: true, sharedStructuresKey: Symbol.for('dataStructures')
+        });
 
         const dbs = {};
+
         if (carrier.options.databases && Array.isArray(carrier.options.databases)) {
             for (const dbReq of carrier.options.databases) {
-                dbs[dbReq.name] = store.openDB(dbReq.dbName);
+                if(dbReq.archive){
+                    dbs[dbReq.name] = archiveStore.openDB(dbReq.dbName);
+                }else{
+                    dbs[dbReq.name] = store.openDB(dbReq.dbName);
+                }
             }
         }
 
