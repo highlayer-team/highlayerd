@@ -2,7 +2,6 @@ const msgpackr = require('msgpackr');
 const crypto = require('crypto');
 const config = require('../config.json');
 const ed25519 = require('bcrypto/lib/ed25519');
-const { base58 } = require('bstring');
 const bip322 = require('bip322-js');
 const systemActions = require('../system/actionList');
 class HighlayerTx {
@@ -22,62 +21,61 @@ class HighlayerTx {
 		this.nonce = nonce || crypto.randomBytes(4).readUInt32BE(0);
 		this.actions = actions || [];
 		this.bundlePosition = bundlePosition || null;
-		(this.sequencerTxIndex = sequencerTxIndex || null),
-			(this.sequencerSignature = sequencerSignature || null);
+		this.sequencerTxIndex = sequencerTxIndex || null,
 		this.trueTxIndex = trueTxIndex || null;
 		this.parentBundleHash = parentBundleHash || null;
 		this.sequencerSignature = sequencerSignature || null;
 	}
 
+
 	encode() {
-		return base58.encode(
-			msgpackr.encode({
-				address: this.address,
-				signature: this.signature,
-				nonce: this.nonce,
-				actions: this.actions,
-				bundlePosition: this.bundlePosition,
-				sequencerTxIndex: this.sequencerTxIndex,
-				trueTxIndex: this.trueTxIndex,
-				parentBundleHash: this.parentBundleHash,
-				sequencerSignature: this.sequencerSignature,
-			})
-		);
-	}
+    
+		return msgpackr.encode({
+		   address: this.address,
+		   signature: this.signature,
+		   nonce: this.nonce,
+		   actions: this.actions,
+		   bundlePosition: this.bundlePosition,
+		   sequencerTxIndex: this.sequencerTxIndex,
+		   trueTxIndex: this.trueTxIndex,
+		   parentBundleHash: this.parentBundleHash,
+		   sequencerSignature: this.sequencerSignature,
+		 })
+	 }
 
 	extractPrototype() {
-		return base58.encode(
-			msgpackr.encode({
-				address: this.address,
-				signature: null,
-				nonce: this.nonce,
-				actions: this.actions,
-				bundlePosition: null,
-				sequencerTxIndex: null,
-				trueTxIndex: null,
-				parentBundleHash: null,
-				sequencerSignature: null,
-			})
-		);
+   
+		return msgpackr.encode({
+		  address: this.address,
+		  signature: null,
+		  nonce: this.nonce,
+		  actions: this.actions,
+		  bundlePosition: null,
+		  sequencerTxIndex: null,
+		  trueTxIndex: null,
+		  parentBundleHash: null,
+		  sequencerSignature: null,
+		})
+	  
 	}
 	txID() {
 		return crypto
-			.createHash('sha256')
-			.update(
-				msgpackr.encode({
-					address: this.address,
-					signature: this.signature,
-					nonce: this.nonce,
-					actions: this.actions,
-					bundlePosition: null,
-					sequencerTxIndex: null,
-					trueTxIndex: null,
-					parentBundleHash: null,
-					sequencerSignature: null,
-				})
-			)
-			.digest('hex');
-	}
+		  .createHash("blake2s256")
+		  .update(
+			msgpackr.encode({
+			  address: this.address,
+			  signature: this.signature,
+			  nonce: this.nonce,
+			  actions: this.actions,
+			  bundlePosition: null,
+			  sequencerTxIndex: null,
+			  trueTxIndex: null,
+			  parentBundleHash: null,
+			  sequencerSignature: null,
+			})
+		  )
+		  .digest("hex");
+	  }
 	getActionsGas(interactionGas = 0, { highlayerNodeState, dbs }) {
 		let gasActions = this.actions.filter((a) => a.program === 'system' && a.action === 'buyGas');
 		let otherActions = this.actions.filter((a) => a.program !== 'system' || a.action !== 'buyGas');
@@ -105,9 +103,50 @@ class HighlayerTx {
 		}
 		return interactionGas;
 	}
-	static decode(base58encoded) {
+	rawTxID() {
+		return crypto
+		  .createHash("blake2s256")
+		  .update(
+			msgpackr.encode({
+			  address: this.address,
+			  signature: this.signature,
+			  nonce: this.nonce,
+			  actions: this.actions,
+			  bundlePosition: this.bundlePosition,
+			  sequencerTxIndex: this.sequencerTxIndex,
+			  trueTxIndex: null,
+			  parentBundleHash: this.parentBundleHash,
+			  sequencerSignature: this.sequencerSignature,
+			})
+		  )
+		  .digest();
+	  }
+
+	  extractedRawTxID() {
+
+		return crypto
+		   .createHash("blake2s256")
+		   .update(
+			 msgpackr.encode({
+			   address: this.address,
+			   signature: null,
+			   nonce: this.nonce,
+			   actions: this.actions,
+			   bundlePosition: null,
+			   sequencerTxIndex: null,
+			   trueTxIndex: null,
+			   parentBundleHash: null,
+			   sequencerSignature: null,
+			 })
+		   )
+		   .digest();
+		  
+	 
+	 
+	   }
+	static decode(buffer) {
 		try {
-			const buffer = base58.decode(base58encoded);
+			
 			const decodedObject = msgpackr.decode(buffer);
 			return new HighlayerTx({
 				address: decodedObject.address,
@@ -123,20 +162,19 @@ class HighlayerTx {
 			return null;
 		}
 	}
-	static verifySignatures(encodedHighlayerTx) {
-		const sequencerUnsigned = Buffer.from(
-			new HighlayerTx({ ...encodedHighlayerTx, sequencerSignature: null }).encode()
-		);
-		const dataHash = crypto.createHash('sha256').update(sequencerUnsigned).digest();
+	static verifySignatures(highlayerTx) {
+		const sequencerUnsigned = 
+			new HighlayerTx({ ...highlayerTx, sequencerSignature: null }).encode()
+
 		const isSequencerSignatureValid = ed25519.verify(
-			dataHash,
-			base58.decode(encodedHighlayerTx.sequencerSignature),
+			sequencerUnsigned.rawTxID(),
+			highlayerTx.sequencerSignature,
 			Buffer.from(config.sequencerPubkey, 'hex')
 		);
 		const isEOASignatureValid = bip322.Verifier.verifySignature(
-			encodedHighlayerTx.address,
-			encodedHighlayerTx.extractPrototype(),
-			encodedHighlayerTx.signature
+			highlayerTx.address,
+			highlayerTx.extractedRawTxID(),
+			highlayerTx.signature
 		);
 
 		return isEOASignatureValid && isSequencerSignatureValid;

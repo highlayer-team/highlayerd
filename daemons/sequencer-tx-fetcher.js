@@ -41,15 +41,17 @@ const panicChannel = new BroadcastChannel('panic');
 				continue;
 			}
 
-			const resp = await body.text();
-
+			const resp = Buffer.from(new Uint8Array(await body.arrayBuffer()));
+		console.log("Sequencer Response:",resp)
 			addToProcessing(resp);
 			currentTxN++;
 			if (currentTxN % 1000 === 0) {
 				await highlayerNodeState.put('current-fetched-tx', currentTxN);
 			}
 		} catch (e) {
+			
 			console.error(e);
+			await wait(1000);
 		}
 	}
 })();
