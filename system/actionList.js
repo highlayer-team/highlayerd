@@ -1,3 +1,4 @@
+
 module.exports={
     allocateGas:require("./actions/allocateGas.js"),
     transfer:require("./actions/transfer.js"),
@@ -5,4 +6,5 @@ module.exports={
     createContract:require("./actions/createContract.js"),
     log:require("./actions/log.js"),
     sequencerDeposit:require("./actions/sequencerDeposit.js"),
+    kvStore:require("./actions/kvStore.js")
 }

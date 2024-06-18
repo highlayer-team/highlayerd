@@ -12,7 +12,7 @@ module.exports = {
         }
         return totalGas;
     },
-    async execute(action, { highlayerNodeState, dbs, interaction }) {
+    execute(action, { highlayerNodeState, dbs, interaction }) {
         const balances = dbs.balances;
         let { amount, recipient } = action.params;
         let balance = Big(balances.get(interaction.sender) || "0");
@@ -25,7 +25,8 @@ module.exports = {
             balance = balance.minus(amount);
         }
         recipientBalance = recipientBalance.plus(amount);
-        await Promise.all([balances.put(interaction.sender, balance.toString()), balances.put(recipient, recipientBalance.toString())])
+        balances.put(interaction.sender, balance.toString())
+        balances.put(recipient, recipientBalance.toString())
 
 
     }

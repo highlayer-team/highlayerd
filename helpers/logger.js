@@ -14,14 +14,14 @@ module.exports=class HighlayerLogger {
             return
         }
    
-        fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n--LOG\n"+contents.map(prettyStringify).join('\n---\n')+"\n--LOG")
+        fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n\n--LOG\n"+contents.map(prettyStringify).join('\n---\n')+"\n--LOG")
     }
     error(...contents){
         
             if(!config.enableLogging){
                 return
             }
-            fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n--ERROR\n"+contents.map(prettyStringify).join('\n---\n')+"\n--ERROR")
+            fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n\n--ERROR\n"+contents.map(prettyStringify).join('\n---\n')+"\n--ERROR")
     }
 }
 
@@ -44,8 +44,10 @@ function prettyStringify(value, replacer = null, space = 2) {
     const formatObject = (obj, depth) => {
         const indent = ' '.repeat(depth * space);
         const lines = [];
+        if(Array.isArray(obj)){
+            return `[${obj.map(item => prettyStringify(item, replacer, space)).join(', ')}]`;
+        }
         const properties = Object.getOwnPropertyNames(obj);
-        const proto = Object.getPrototypeOf(obj);
 
         properties.forEach(prop => {
             const val = obj[prop];
@@ -58,11 +60,6 @@ function prettyStringify(value, replacer = null, space = 2) {
             }
         });
 
-        if (proto && proto !== Object.prototype) {
-            lines.push(`${indent}__proto__: {`);
-            lines.push(formatObject(proto, depth + 1));
-            lines.push(`${indent}}`);
-        }
 
         return `{\n${lines.join(',\n')}\n${indent.slice(space)}}`;
     };

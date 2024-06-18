@@ -4,7 +4,7 @@ module.exports = {
 		const { amount } = params;
 		return -amount;
 	},
-	async execute(action, { highlayerNodeState, dbs, interaction }) {
+	execute(action, { highlayerNodeState, dbs, interaction }) {
 		const balances = dbs.balances;
 		let balance = Big(balances.get(interaction.sender) || '0');
 		let { amount, price } = action.params;
@@ -20,6 +20,6 @@ module.exports = {
 			balance = balance.minus(amount * price);
 		}
 
-		await balances.put(interaction.sender, balance.toString());
+		balances.put(interaction.sender, balance.toString());
 	},
 };

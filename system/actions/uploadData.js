@@ -10,8 +10,8 @@ module.exports={
     
         return Buffer.from(data,'base64').byteLength*700;
     },
-   async execute(action,{highlayerNodeState,dbs,interaction,actionNumber}){
+   execute(action,{highlayerNodeState,dbs,interaction,actionNumber}){
        let dataId=interaction.hash+numberToPaddedHex(actionNumber);
-       await dbs.dataBlobs.put(dataId,Buffer.from(action.params.data,'base64'))
+       dbs.dataBlobs.put(dataId,Buffer.from(action.params.data,'base64'))
     }
 }

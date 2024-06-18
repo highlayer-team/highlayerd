@@ -4,10 +4,12 @@ const { open } = require('lmdb');
 function LMDBStoreModule(_app, carrier) {
     try {
         const store = open({
+            cache:true,
             path: carrier.options.dbPath,
             useVersions: true, sharedStructuresKey: Symbol.for('dataStructures')
         });
         const archiveStore = open({
+            cache:true,
             path: carrier.options.archiveDBPath,
             useVersions: true, sharedStructuresKey: Symbol.for('dataStructures')
         });

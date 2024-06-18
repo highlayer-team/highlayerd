@@ -12,8 +12,8 @@ module.exports = {
         return 1000+Buffer.from(key).byteLength*700+Buffer.from(msgpackr.encode(value)).byteLength*100;
     },
 
-    async execute(action, { highlayerNodeState, dbs, interaction, actionNumber, macroTasks }) {
+    execute(action, { highlayerNodeState, dbs, interaction, actionNumber, macroTasks }) {
         const { key, value } = action.params;
-        await dbs.accountKV.put(interaction.sender+':'+key,value);
+        dbs.accountKV.put(interaction.sender+':'+key,value);
     }
 }

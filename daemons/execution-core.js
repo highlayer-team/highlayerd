@@ -9,6 +9,9 @@ const GeneratorQueue = require('../helpers/generator-queue.js');
 const systemActions = require('../system/actionList');
 const fs = require('fs');
 const json5 = require('json5');
+const process=require("process");
+const bech32 = require('bcrypto/lib/encoding/bech32m');
+
 const crypto = require('crypto');
 const Glomium = require('glomium');
 const calculateActionsGas = require('../helpers/calculateActionsGas');
@@ -20,11 +23,13 @@ const genesisActions = json5.parse(
 
 (async () => {
 	const highlayerNodeState = lmdb.open({
+		cache:true,
 		path: path.join(config.dataDir, 'node-state'),
 		useVersions: true,
 		sharedStructuresKey: Symbol.for('dataStructures'),
 	});
 	const highlayerNodeArchive = lmdb.open({
+		cache:true,
 		path: path.join(config.archiveDataDir, 'slow-node-state'),
 		useVersions: true,
 		sharedStructuresKey: Symbol.for('dataStructures'),
@@ -35,6 +40,7 @@ const genesisActions = json5.parse(
 		contracts: highlayerNodeState.openDB('contracts'),
 		transactions: highlayerNodeArchive.openDB('transactions'),
 	};
+	const currentLatestTxIndex = highlayerNodeState.get('current-executed-tx-i') || 0;
 	const vm = new Glomium({
 		gas: {
 			limit: 100000,
@@ -44,9 +50,13 @@ const genesisActions = json5.parse(
 
 	const executionCoreChannel = new BroadcastChannel('executionCore');
 	const centralChannel = new BroadcastChannel('centralChannel');
+	process.on('beforeExit',async ()=>{
+		await highlayerNodeArchive.close()
+		await highlayerNodeState.close()
+	})
 
-	let macroTasks = new GeneratorQueue([], 0, [], async function onNextItem(item) {
-		console.log(item);
+	let macroTasks = new GeneratorQueue([], currentLatestTxIndex, [], async function onNextItem(item) {
+		
 		let actionNumber = 0;
 		let gasLeft = item.gas;
 
@@ -93,11 +103,11 @@ const genesisActions = json5.parse(
 						error: logger.error.bind(logger),
 						warn: logger.error.bind(logger),
 					});
-					await vm.set("KV",{
+					await vm.set('KV', {
 						get(key) {
-							 dbs.accountKV.get(action.prgram+':'+key);
-						}
-					})
+							dbs.accountKV.get(action.prgram + ':' + key);
+						},
+					});
 					await vm.run(contractSource);
 					const onTransaction = await vm.get('onTransaction');
 
@@ -149,6 +159,7 @@ const genesisActions = json5.parse(
 				return;
 			}
 		}
+		highlayerNodeState.put('current-executed-tx-i', item.id);
 		return true;
 	});
 

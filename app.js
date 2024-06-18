@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs');
 const AutoLoad = require('@fastify/autoload')
 const config = require("./config.json");
+
 const {
   BroadcastChannel,
   Worker,

@@ -40,13 +40,12 @@ const panicChannel = new BroadcastChannel('panic');
 				await wait(1000);
 				continue;
 			}
-
-			const resp = Buffer.from(new Uint8Array(await body.arrayBuffer()));
-		console.log("Sequencer Response:",resp)
+			const arrayBuf=await body.arrayBuffer()
+			const resp = Buffer.from(new Uint8Array(arrayBuf));
 			addToProcessing(resp);
 			currentTxN++;
-			if (currentTxN % 1000 === 0) {
-				await highlayerNodeState.put('current-fetched-tx', currentTxN);
+			if (currentTxN % 10 === 0) {
+				 highlayerNodeState.put('current-fetched-tx', currentTxN);
 			}
 		} catch (e) {
 			
@@ -58,10 +57,12 @@ const panicChannel = new BroadcastChannel('panic');
 
 async function addToProcessing(tx) {
 	const decoded = HighlayerTx.decode(tx);
+
 	if (!decoded) {
 		return;
 	}
 	const validSignatures = HighlayerTx.verifySignatures(decoded);
+
 	if (!validSignatures) {
 		return;
 	}
@@ -105,7 +106,7 @@ async function addToProcessing(tx) {
 	}
 	let hash=decoded.txID()
 	if(hash){
-		console.log(hash,"added to processing")
+	
 		dbs.transactions.ifNoExists(hash, () => {
 			dbs.transactions.put(hash, tx);
 		});
