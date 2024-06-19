@@ -105,7 +105,7 @@ const genesisActions = json5.parse(
 					});
 					await vm.set('KV', {
 						get(key) {
-							dbs.accountKV.get(action.prgram + ':' + key);
+							dbs.accountKV.get(action.program + ':' + key);
 						},
 					});
 					await vm.run(contractSource);

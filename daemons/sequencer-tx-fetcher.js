@@ -32,9 +32,10 @@ const panicChannel = new BroadcastChannel('panic');
 (async () => {
 	while (true) {
 		try {
+
 			const url = `${config.sequencerHttpURL}ledger/${currentTxN}`;
 			const { body, statusCode } = await request(url);
-
+		
 			if (statusCode !== 200) {
 				console.log('No new transactions, latest: ' + currentTxN);
 				await wait(1000);
@@ -42,6 +43,7 @@ const panicChannel = new BroadcastChannel('panic');
 			}
 			const arrayBuf=await body.arrayBuffer()
 			const resp = Buffer.from(new Uint8Array(arrayBuf));
+		
 			addToProcessing(resp);
 			currentTxN++;
 			if (currentTxN % 10 === 0) {
@@ -61,7 +63,13 @@ async function addToProcessing(tx) {
 	if (!decoded) {
 		return;
 	}
-	const validSignatures = HighlayerTx.verifySignatures(decoded);
+
+	let validSignatures 
+	try{
+		validSignatures = HighlayerTx.verifySignatures(decoded);
+	} catch (e) {
+		validSignatures=false
+	} 
 
 	if (!validSignatures) {
 		return;
