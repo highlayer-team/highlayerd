@@ -1,8 +1,4 @@
-const Big = require("big.js");
-const bech32 = require("bcrypto/lib/encoding/bech32m")
-const crypto = require("crypto")
-const calculateActionsGas = require("../../helpers/calculateActionsGas");
-const numberToPaddedHex = number => ((number.toString(16).length % 2 ? '0' : '') + number.toString(16));
+
 module.exports = {
     calculateSpend(params, { highlayerNodeState, dbs }) {
         const { key, value } = params;

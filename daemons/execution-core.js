@@ -105,6 +105,16 @@ const genesisActions = json5.parse(
 					vm.set('KV', {
 						get(key) {
 							return dbs.accountKV.get(action.program + ':' + key)||null;
+						},
+						set(key,value){
+						return {
+							program:'system',
+							action:'kvStore',
+							params:{
+								key,
+								value,
+							}
+						}	
 						}
 					});
 
@@ -170,7 +180,7 @@ const genesisActions = json5.parse(
 						}
 						macroTasks.addToPriority({
 							sender: action.program,
-							actions: outcome,
+							actions: outcome.map(action=>({action:action.action, program:action.program, params:action.params})),//we need to sanitize actions to avoid some unpleasant issues
 							gas: item.gas,
 							hash: crypto
 								.createHash('blake2s256')
