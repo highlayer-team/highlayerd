@@ -36,7 +36,6 @@ module.exports = {
 				)
 				.digest()
 		);
-
 	 dbs.contracts.put(contractId, sourceId);
 		macroTasks.addToPriority({
 			sender: contractId,

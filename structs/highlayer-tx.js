@@ -57,7 +57,7 @@ class HighlayerTx {
 	txID() {
 		return crypto
 			.createHash('blake2s256')
-			.update(
+			.update( 
 				msgpackr.encode({
 					address: this.address,
 					signature: this.signature,

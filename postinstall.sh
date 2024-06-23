@@ -1,5 +1,6 @@
 git submodule update --init --recursive
 cd bcoin
+echo "Installing bcoin deps"
 npm install
 cd ../weselowski-vdf-native.js/go 
 go build -o ../include/libvdf.so -buildmode=c-shared lib.go
