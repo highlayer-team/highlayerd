@@ -5,5 +5,5 @@
     "sequencerPubkey":"dfc8bae0eabca59ff57d4e76a7eb3bf817e0466c4c9db58c7d6f79c83b4c1aae",
     "enableLogging":true,
     "networkName":"Highlayer.T/0.4",
-    "port":3000
+    "port":8849
 }

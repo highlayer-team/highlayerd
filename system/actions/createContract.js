@@ -13,6 +13,7 @@ module.exports = {
 			!Number.isSafeInteger(gasForInitActions) ||
 			gasForInitActions < 1
 		) {
+			
 			throw new Error('Invalid parameters');
 		}
 
@@ -36,6 +37,7 @@ module.exports = {
 				)
 				.digest()
 		);
+		console.log("Deployed contract:"+contractId)
 	 dbs.contracts.put(contractId, sourceId);
 		macroTasks.addToPriority({
 			sender: contractId,

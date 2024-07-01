@@ -16,6 +16,7 @@ const calculateActionsGas = (interactionGas, actions, { highlayerNodeState, dbs 
 			try {
 				interactionGas -= systemAction.calculateSpend(action.params, { highlayerNodeState, dbs });
 			} catch (e) {
+				console.error(e)
 				throw new Error('Error during gas calculation: ' + e.message);
 			}
 		}

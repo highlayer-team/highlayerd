@@ -3807,9 +3807,9 @@ uuid@^8.3.2:
   resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz"
   integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
-"uWebSockets.js@github:uNetworking/uWebSockets.js#v20.43.0":
-  version "20.43.0"
-  resolved "git+ssh://git@github.com/uNetworking/uWebSockets.js.git#1977b5039938ad863d42fc4958d48c17e5a1fa06"
+"uWebSockets.js@github:uNetworking/uWebSockets.js#v20.44.0":
+  version "20.44.0"
+  resolved "git+ssh://git@github.com/uNetworking/uWebSockets.js.git#8fa05571bf6ea95be8966ad313d9d39453e381ae"
 
 varuint-bitcoin@^1.0.1, varuint-bitcoin@^1.1.2:
   version "1.1.2"

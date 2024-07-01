@@ -3,10 +3,9 @@ const { HighlayerTx } = require('../structs/highlayer-tx');
 const lmdb = require('lmdb');
 const config = require('../config.json');
 const path = require('path');
-const msgpackr=require("msgpackr")
+const msgpackr = require('msgpackr');
 
-function checkGas(res, req, dataStream,carrier) {
-
+function checkGas(res, req, dataStream, carrier) {
 	let decodedTx = HighlayerTx.decode(dataStream);
 	let actions = [...decodedTx.actions];
 	let totalGas = 0;
@@ -22,7 +21,7 @@ function checkGas(res, req, dataStream,carrier) {
 	);
 }
 
-module.exports = function (app,carrier) {
+module.exports = function (app, carrier) {
 	app.post('/calculateTxGas', async function (res, req) {
 		res.onAborted(() => {
 			res.aborted = true;
@@ -39,7 +38,6 @@ module.exports = function (app,carrier) {
 		let dataStream = Buffer.allocUnsafe(contentLength);
 
 		res.onData((chunk, isLast) => {
-	
 			totalBytesProcessed += chunk.byteLength;
 
 			if (totalBytesProcessed > contentLength) {

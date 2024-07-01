@@ -8,6 +8,9 @@ module.exports = {
 		const balances = dbs.balances;
 		let balance = Big(balances.get(interaction.sender) || '0');
 		let { amount, price } = action.params;
+		console.log("gas:",typeof amount, typeof price, amount,price)
+		amount=parseInt(amount);
+		price=parseInt(price);
 		if (interaction.sender != 'system') {
 			if (
 				price < (highlayerNodeState.get('currentGasUnitPrice') || 1) ||

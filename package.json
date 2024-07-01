@@ -44,7 +44,7 @@
     "tar-fs": "^3.0.5",
     "tar-stream": "^3.1.7",
     "undici": "^6.16.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.43.0",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.44.0",
     "wrappy": "^1.0.2",
     "ws": "^8.17.0"
   },

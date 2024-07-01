@@ -1,4 +1,4 @@
-
+const msgpackr=require('msgpackr')
 module.exports = {
     calculateSpend(params, { highlayerNodeState, dbs }) {
         const { key, value } = params;
@@ -10,6 +10,7 @@ module.exports = {
 
     execute(action, { highlayerNodeState, dbs, interaction, actionNumber, macroTasks }) {
         const { key, value } = action.params;
+        console.log("Putting key:"+interaction.sender+':'+key+" value:"+value)
         dbs.accountKV.put(interaction.sender+':'+key,value);
     }
 }
