@@ -9,7 +9,7 @@ const GeneratorQueue = require('../helpers/generator-queue.js');
 const systemActions = require('../system/actionList');
 const fs = require('fs');
 const json5 = require('json5');
-const process=require("process");
+const process = require('process');
 const bech32 = require('bcrypto/lib/encoding/bech32m');
 
 const crypto = require('crypto');
@@ -23,23 +23,23 @@ const genesisActions = json5.parse(
 
 (async () => {
 	const highlayerNodeState = lmdb.open({
-		cache:true,
+		cache: true,
 		path: path.join(config.dataDir, 'node-state'),
 		useVersions: true,
 		sharedStructuresKey: Symbol.for('dataStructures'),
 	});
 	const highlayerNodeArchive = lmdb.open({
-		cache:true,
+		cache: true,
 		path: path.join(config.archiveDataDir, 'slow-node-state'),
 		useVersions: true,
 		sharedStructuresKey: Symbol.for('dataStructures'),
 	});
 	const dbs = {
-		balances: highlayerNodeState.openDB('balances',{cache:true}),
-		dataBlobs: highlayerNodeState.openDB('data-blobs',{cache:true}),
-		contracts: highlayerNodeState.openDB('contracts',{cache:true}),
-		accountKV: highlayerNodeState.openDB('account-kv',{cache:true}),
-		transactions: highlayerNodeArchive.openDB('transactions',{cache:true}),
+		balances: highlayerNodeState.openDB('balances', { cache: true }),
+		dataBlobs: highlayerNodeState.openDB('data-blobs', { cache: true }),
+		contracts: highlayerNodeState.openDB('contracts', { cache: true }),
+		accountKV: highlayerNodeState.openDB('account-kv', { cache: true }),
+		transactions: highlayerNodeArchive.openDB('transactions', { cache: true }),
 	};
 	const currentLatestTxIndex = highlayerNodeState.get('current-executed-tx-i') || -1;
 	const vm = new Glomium({
@@ -51,20 +51,20 @@ const genesisActions = json5.parse(
 
 	const executionCoreChannel = new BroadcastChannel('executionCore');
 	const centralChannel = new BroadcastChannel('centralChannel');
-	process.on('beforeExit',async ()=>{
-		await highlayerNodeArchive.close()
-		await highlayerNodeState.close()
-	})
-	let macroTasks = new GeneratorQueue([], currentLatestTxIndex+1, [], async function onNextItem(item) {
+	process.on('beforeExit', async () => {
+		await highlayerNodeArchive.close();
+		await highlayerNodeState.close();
+	});
+	let macroTasks = new GeneratorQueue([], currentLatestTxIndex + 1, [], async function onNextItem(
+		item
+	) {
 		let actionNumber = 0;
 		let gasLeft = item.gas;
 		while (item.actions.length > 0) {
 			const action = item.actions.shift();
 			const logger = new HighlayerLogger(action.program);
 			try {
-				
 				if (action.program == 'system') {
-					
 					if (systemActions[action.action]) {
 						await systemActions[action.action].execute(action, {
 							highlayerNodeState,
@@ -75,12 +75,12 @@ const genesisActions = json5.parse(
 							logger,
 							centralChannel,
 						});
-						
 					} else {
 						throw new Error(`Unknown system action ${action.action}`);
 					}
 				} else {
 					const contractSourceId = dbs.contracts.get(action.program);
+					console.log(contractSourceId);
 					if (!contractSourceId) {
 						throw new Error(`[${item.id}] Unknown program ${action.program}`);
 					}
@@ -104,55 +104,49 @@ const genesisActions = json5.parse(
 					});
 					vm.set('KV', {
 						get(key) {
-							return dbs.accountKV.get(action.program + ':' + key)||null;
+							return dbs.accountKV.get(action.program + ':' + key) || null;
 						},
-						set(key,value){
-						return {
-							program:'system',
-							action:'kvStore',
-							params:{
-								key,
-								value,
-							}
-						}	
-						}
+						set(key, value) {
+							return {
+								program: 'system',
+								action: 'kvStore',
+								params: {
+									key,
+									value,
+								},
+							};
+						},
 					});
 
-					vm.set('ContractError',(e)=>{
-
-						throw new Error('Contract error: '+e);
+					vm.set('ContractError', (e) => {
+						throw new Error('Contract error: ' + e);
 					});
-					vm.set("ContractAssert",(condition,errorMessage)=>{
-						if(!condition){
+					vm.set('ContractAssert', (condition, errorMessage) => {
+						if (!condition) {
 							throw new Error(errorMessage);
 						}
-					})
-					
-	
-					
-					await vm.run(contractSource)
-	
-					const onTransaction = await vm.get('onTransaction');
-		
-					let outcome;
-					try{
-					outcome = await onTransaction({
-						action:action.action,
-						hash: item.hash,
-						sender: item.sender,
-						actionNumber: actionNumber,
-						params: action.params,
 					});
-				}
-				catch(e){
-					console.error(e)
-					logger.error(
-						'Transaction: ' + item.hash+' | Sender: '+item.sender,
-						e
 
-					);
-				}
-		
+					await vm.run(contractSource);
+
+					const onTransaction = await vm.get('onTransaction');
+
+					let outcome;
+					try {
+						outcome = await onTransaction({
+							action: action.action,
+							hash: item.hash,
+							sender: item.sender,
+							actionNumber: actionNumber,
+							params: action.params,
+						});
+
+						console.log(outcome);
+					} catch (e) {
+						console.error(e);
+						logger.error('Transaction: ' + item.hash + ' | Sender: ' + item.sender, e);
+					}
+
 					item.gas -= (await vm.getGas()).gasUsed - 10000;
 					if (outcome && outcome.length > 0) {
 						try {
@@ -161,12 +155,11 @@ const genesisActions = json5.parse(
 								dbs,
 							});
 						} catch (e) {
-							console.log(e)
+							console.log(e);
 							logger.error(
 								'Transaction: ' + interaction.hash,
 								'Sender: ' + item.sender,
-								'Error: '+e?.message
-								
+								'Error: ' + e?.message
 							);
 							break;
 						}
@@ -180,7 +173,11 @@ const genesisActions = json5.parse(
 						}
 						macroTasks.addToPriority({
 							sender: action.program,
-							actions: outcome.map(action=>({action:action.action, program:action.program, params:action.params})),//we need to sanitize actions to avoid some unpleasant issues
+							actions: outcome.map((action) => ({
+								action: action.action,
+								program: action.program,
+								params: action.params,
+							})), //we need to sanitize actions to avoid some unpleasant issues
 							gas: item.gas,
 							hash: crypto
 								.createHash('blake2s256')
@@ -188,27 +185,21 @@ const genesisActions = json5.parse(
 								.digest('hex'),
 						});
 					}
-
-					
 				}
 			} catch (e) {
-				console.error(e)
-				logger.error('Transaction: ' + item.hash, 'Sender: ' + item.sender, 'Error: '+ e?.message);
+				console.error(e);
+				logger.error('Transaction: ' + item.hash, 'Sender: ' + item.sender, 'Error: ' + e?.message);
 				break;
 			}
 			actionNumber++;
 		}
 
-
-		if(typeof item.id=="number"){
-		
+		if (typeof item.id == 'number') {
 			highlayerNodeState.put('current-executed-tx-i', item.id);
 		}
-		
+
 		return true;
-	})
-
-
+	});
 
 	executionCoreChannel.onmessage = async (interaction) => {
 		macroTasks.addItem(interaction.data);

@@ -60,7 +60,7 @@ class HighlayerTx {
 			.update( 
 				msgpackr.encode({
 					address: this.address,
-					signature: this.signature,
+					signature: null,
 					nonce: this.nonce,
 					actions: this.actions,
 					bundlePosition: null,
