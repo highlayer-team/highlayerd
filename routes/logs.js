@@ -3,7 +3,7 @@ const HighlayerLogger = require("../helpers/logger")
 module.exports =  function (app) {
   app.get('/logs/:id', async function (reply, request) {
     let aborted=false;
-    reply.onAbort(() => {
+    reply.onAborted(() => {
       aborted=true
     })
     let logger = new HighlayerLogger(request.getParameter(0))
