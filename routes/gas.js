@@ -22,11 +22,21 @@ function checkGas(res, req, dataStream, carrier) {
 }
 
 module.exports = function (app, carrier) {
+	app.options('/calculateTxGas', (res, req) => {
+		res.writeStatus('204 No Content');
+		res.writeHeader('Access-Control-Allow-Origin', '*');
+		res.writeHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+		res.writeHeader('Access-Control-Allow-Headers', 'Content-Type');
+		res.end();
+	});
 	app.post('/calculateTxGas', async function (res, req) {
 		res.onAborted(() => {
 			res.aborted = true;
 		});
 
+		res.writeHeader('Access-Control-Allow-Origin', '*');
+		res.writeHeader('Access-Control-Allow-Methods', 'POST');
+		res.writeHeader('Access-Control-Allow-Headers', 'Content-Type');
 		const contentLength = parseInt(req.getHeader('content-length'));
 		if (!contentLength) {
 			res.writeStatus('411 Length Required');

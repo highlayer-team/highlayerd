@@ -1,27 +1,35 @@
 const path = require("path")
 const config = require("../config.json")
-const fs=require("fs/promises")
-module.exports=class HighlayerLogger {
-    constructor(id){
-        this.id=id
+const fs = require("fs/promises")
+module.exports = class HighlayerLogger {
+    constructor(id) {
+        this.id = id
+
+    }
+    async dump() {
+        let res;
+        try {
+            res = await fs.readFile(path.join(config.archiveDataDir, "logs", this.id + ".log"))
+        } catch (e) {
+            res = "No logs"
+        }finally{
+            return res
+        }
         
     }
-    async dump(){
-        return await fs.readFile(path.join(config.archiveDataDir,"logs",this.id+".log"))
-    }
-    log(...contents){
-        if(!config.enableLogging){
+    log(...contents) {
+        if (!config.enableLogging) {
             return
         }
-   
-        fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n\n--LOG\n"+contents.map(prettyStringify).join('\n---\n')+"\n--LOG")
+
+        fs.appendFile(path.join(config.archiveDataDir, "logs", this.id + ".log"), "\n\n--LOG\n" + contents.map(prettyStringify).join('\n---\n') + "\n--LOG")
     }
-    error(...contents){
-        
-            if(!config.enableLogging){
-                return
-            }
-            fs.appendFile(path.join(config.archiveDataDir,"logs",this.id+".log"),"\n\n--ERROR\n"+contents.map(prettyStringify).join('\n---\n')+"\n--ERROR")
+    error(...contents) {
+
+        if (!config.enableLogging) {
+            return
+        }
+        fs.appendFile(path.join(config.archiveDataDir, "logs", this.id + ".log"), "\n\n--ERROR\n" + contents.map(prettyStringify).join('\n---\n') + "\n--ERROR")
     }
 }
 
@@ -44,7 +52,7 @@ function prettyStringify(value, replacer = null, space = 2) {
     const formatObject = (obj, depth) => {
         const indent = ' '.repeat(depth * space);
         const lines = [];
-        if(Array.isArray(obj)){
+        if (Array.isArray(obj)) {
             return `[${obj.map(item => prettyStringify(item, replacer, space)).join(', ')}]`;
         }
         const properties = Object.getOwnPropertyNames(obj);
