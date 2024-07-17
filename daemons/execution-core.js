@@ -98,7 +98,10 @@ const genesisActions = json5.parse(
 						used: 0,
 					});
 					vm.set('console', {
-						log: logger.log.bind(logger),
+						log: (...args)=>{
+							logger.log(...args);
+							console.log(...args);
+						},
 						error: logger.error.bind(logger),
 						warn: logger.error.bind(logger),
 					});
@@ -157,7 +160,7 @@ const genesisActions = json5.parse(
 						} catch (e) {
 							console.log(e);
 							logger.error(
-								'Transaction: ' + interaction.hash,
+								'Transaction: ' + item.hash,
 								'Sender: ' + item.sender,
 								'Error: ' + e?.message
 							);
@@ -165,7 +168,7 @@ const genesisActions = json5.parse(
 						}
 						if (item.gas < 1) {
 							logger.error(
-								'Transaction: ' + interaction.hash,
+								'Transaction: ' + item.hash,
 								'Sender: ' + item.sender,
 								'Error: Out of gas'
 							);
